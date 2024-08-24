@@ -37,6 +37,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , containers
+    , process
   default-language: Haskell2010
 
 executable GroupByAgg-exe
@@ -54,6 +55,7 @@ executable GroupByAgg-exe
     , base >=4.7 && <5
     , bytestring
     , containers
+    , process
   default-language: Haskell2010
 
 test-suite GroupByAgg-test
@@ -75,4 +77,5 @@ test-suite GroupByAgg-test
     , hspec
     , hspec-leancheck
     , leancheck
+    , process
   default-language: Haskell2010
