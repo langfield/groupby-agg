@@ -28,22 +28,22 @@ instance ToJSON Report where
 instance Semigroup Report where
   r1@(Report s1 p1 n1) <> r2@(Report s2 p2 n2) =
     if s1 == s2
-       then Report s1 ((p1*q1 + p2*q2) / (q1+q2)) (n1+n2)
+       then Report s1 ((p1*v1 + p2*v2) / (v1+v2)) (n1+n2)
        else error $ "Can't (<>) reports with distinct symbols: " ++ show r1 ++ ", " ++ show r2
     where
-      q1 = fromIntegral n1
-      q2 = fromIntegral n2
+      v1 = fromIntegral n1
+      v2 = fromIntegral n2
 
 -- | Generic groupby-aggregation on lists of semigroup elements.
 groupAgg :: Semigroup m => (a -> m) -> (a -> a -> Bool) -> (a -> a -> Ordering) -> [a] -> [m]
 groupAgg f g h = map (foldMap1 f) . groupBy g . sortBy h
 
 mkmatch :: [String] -> Match
-mkmatch [_,_,s,_,p,q] = Match s (read p) (read q)
+mkmatch [_,_,s,_,p,v] = Match s (read p) (read v)
 mkmatch row = error $ "bad row: " ++ show row
 
 mkreport :: Match -> Report
-mkreport (Match s p q) = Report s (fromIntegral p) q
+mkreport (Match s p v) = Report s (fromIntegral p) v
 
 pair :: Report -> (String, Report)
 pair r@(Report s _ _) = (s, r)

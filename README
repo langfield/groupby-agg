@@ -1,0 +1,59 @@
+Try:
+cat b.csv | stack run
+
+Test:
+stack test
+
+* No cassava because it seems overkill
+* Lists and strings over vector, bytestring, or text to keep it simple
+* Handling trailing commas in JSON serialization is annoying, so we *do* use aeson
+* Time complexity: roughly O(max(n, s*r*log(r)))
+    where
+      s = length of longest symbol
+      r = # of rows
+      n = # of chars in entire CSV file
+  - String ops in `parse` are all O(n)
+  - Our groupby-agg is r*log(r) because of the `sortBy`
+  - The `groupBy` and `foldMap1` should be O(r)
+  - Our `split` is O(n) because `drop 1` is O(1) amortized:
+    (https://stackoverflow.com/q/33722292)
+  - That factor of s comes from our comparisons on symbols, since `(==)` is O(s)
+* Space complexity: roughly O(n)
+  - I'll admit, GHC is tricky and I don't have need of this sort of analysis
+    very often, so confidence is mid here.
+* Possibly this could be done much more efficiently with streams, maybe using
+  `Data.Sequence`, `Data.Text.Lazy` or something from bytestring
+
+Testing
+~~~~~~~
+* LeanCheck is very nice, easier to write instances than QuickCheck, more
+  performant and no need for shrinking. Downside is we sometimes don't hit
+  sufficiently complicated cases if the instances aren't written 'efficiently'.
+* Hard to check for correctness of the `vwap` formula without reimplementating
+  the function.
+* Instead, we check that the diagram formed by table concatenation along the
+  row axis and record aggregation is commutative.
+* Another relatively nice way is to fuzz against a library implementation in
+  another language. We do this using a pandas implementation in python. It's
+  disabled by default, but you can turn it on by changing the first argument to
+  `LC.propertyFor` to some positive integer. It's very slow because we are
+  initializing a python process for each test case. Can probably be made much
+  faster by streaming somehow, but LeanCheck doesn't make it easy to do things
+  in a monad, and this is good enough.
+* Our types for sample data generation are a bit weird because they're designed
+  to move the generator onto the next tier quickly. No need for more than a few
+  different symbols, so we just make it a sum type with five constructors. We
+  want to see some cases where multiple rows reference the same symbol, and
+  this will help.
+* Having 0 volume in a row makes no sense, semantically, so we do some weird
+  stuff to model positive integers. However we could make it behave nicely with
+  0-volume rows if we wanted (it may already), we would just need to do some
+  funky stuff on the python side if we wanted to keep that test around.
+* We don't bother generating data for the untouched columns.
+
+Fun
+~~~
+See `c.ua` for an implementation in Uiua! Try at https://www.uiua.org/pad.
+
+If we don't want to serialize the array to JSON, it fits in one short-ish line:
+⇌⊂⊟÷:⊙.⍜(⊙⍉)⊕(/+):⊙:×°⊟:⍜(⊙⍉)⊕(/+):⊙,⊡1.⊙(⊙◴⊛.)⋕⊏4_5:⊡2..⍉°csv

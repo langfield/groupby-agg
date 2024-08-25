@@ -18,6 +18,7 @@ traceF fname f x =
     (unwords [fname, show x, "=", show (f x)])
     (f x)
 
+-- Types for enumerating property-based testing data.
 newtype Volume = Volume Word32 deriving (Eq, Ord)
 data Symbol = S1 | S2 | S3 | S4 | S5 deriving (Eq, Ord, Show, Read)
 data Side = Bid | Ask deriving (Eq, Ord, Show)
@@ -26,9 +27,15 @@ data Row = Row Symbol Int Volume deriving (Eq, Ord, Show)
 reportSymbol :: Report -> Symbol
 reportSymbol (Report s _ _) = read s
 
--- Volumes must be postive integers.
+-- | We represent positive volumes as unsigned integers.
+--
+-- We use this slight hack to map the representations into the positive
+-- integers, since we will always serialize CSV rows before passing them
+-- to the functions under test.
 instance Show Volume where
   show (Volume v) = show (v + 1)
+
+-- LeanCheck instances
 
 instance Listable Volume where
   tiers = cons1 Volume
@@ -43,8 +50,10 @@ instance Listable Symbol where
 instance Listable Row where
   tiers = cons3 Row
 
+-- Helper functions
+
 csvify :: Row -> String
-csvify (Row s p q) = intercalate "," ["A", "A", show s, "Bid", show p, show q]
+csvify (Row s p v) = intercalate "," ["A", "A", show s, "Bid", show p, show v]
 
 serialize :: [Row] -> String
 serialize = unlines . map csvify
