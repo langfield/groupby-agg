@@ -23,6 +23,16 @@ stack test
     very often, so confidence is mid here.
 * Possibly this could be done much more efficiently with streams, maybe using
   `Data.Sequence`, `Data.Text.Lazy` or something from bytestring
+* Time complexity is annoying in purely functional languages. It is a theorem
+  that when restricted to pure data structures constructed as ADTs,
+  dynamically-sized containers can give at best logarithmic access time. Since
+  we're dumping output to stdout, that doesn't really matter here, but we can
+  easily imagine a slightly modified use case where it would. Our choice of
+  `Data.Map` here would possibly bite us in the butt at-scale. Some
+  alternatives are `Data.HashMap` from `unordered-containers`, or
+  `vector`/`array` if we want O(1) reads, or something in `IO` or `ST` if we
+  want O(1) writes, neither of which are needed for the problem as stated (we
+  only index in the tests).
 
 Testing
 ~~~~~~~
@@ -50,6 +60,10 @@ Testing
   0-volume rows if we wanted (it may already), we would just need to do some
   funky stuff on the python side if we wanted to keep that test around.
 * We don't bother generating data for the untouched columns.
+* I would never use `!!` in library/project code, but in a test it is "safe"
+  because the worst that can happen is the test fails, which is what we want to
+  happen anyway. In any case, a data invariant means it shouldn't ever do that
+  in the way it's being used.
 
 Fun
 ~~~
