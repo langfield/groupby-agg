@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Lib (run, agg, parse, Report(..)) where
 
-import Data.List (sortBy)
-import Data.List.NonEmpty (groupBy)
+import GHC.Data.List.SetOps (equivClasses)
 import Data.Aeson (ToJSON (..), (.=), object, pairs, encode)
 import Data.Function (on)
 import Data.Foldable1 (foldMap1)
@@ -35,8 +34,8 @@ instance Semigroup Report where
       v2 = fromIntegral n2
 
 -- | Generic groupby-aggregation on lists of semigroup elements.
-groupAgg :: Semigroup m => (a -> m) -> (a -> a -> Bool) -> (a -> a -> Ordering) -> [a] -> [m]
-groupAgg f g h = map (foldMap1 f) . groupBy g . sortBy h
+groupAgg :: Semigroup m => (a -> m) -> (a -> a -> Ordering) -> [a] -> [m]
+groupAgg f g = map (foldMap1 f) . equivClasses g
 
 mkmatch :: [String] -> Match
 mkmatch [_,_,s,_,p,v] = Match s (read p) (read v)
@@ -57,7 +56,7 @@ jsonify = unpack . encode . M.fromList . map pair
 
 -- | Aggregate a table of matches into a list of reports, one for each symbol.
 agg :: [Match] -> [Report]
-agg = groupAgg mkreport ((==) `on` symbol) (compare `on` symbol)
+agg = groupAgg mkreport (compare `on` symbol)
 
 -- | Parse a CSV of trade matches and return a JSON string of per-symbol reports.
 run :: String -> String
